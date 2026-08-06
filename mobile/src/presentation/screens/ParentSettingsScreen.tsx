@@ -9,6 +9,7 @@ import { SQLiteCategoryRepository } from '../../infrastructure/database/SQLiteCa
 import { SQLiteCardRepository } from '../../infrastructure/database/SQLiteCardRepository';
 import { AddCategoryModal } from '../components/parent/AddCategoryModal';
 import { AddCardModal } from '../components/parent/AddCardModal';
+import { VoiceSettingsModal } from '../components/parent/VoiceSettingsModal';
 import { SyncApiClient } from '../../infrastructure/api/syncApiClient';
 import { SyncCloudData } from '../../domain/usecases/SyncCloudData';
 
@@ -28,9 +29,10 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
   const [purchasing, setPurchasing] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
-  // Modais de Criação
+  // Modais de Criação e Ajustes
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddCard, setShowAddCard] = useState(false);
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
 
   const categoryRepo = new SQLiteCategoryRepository();
   const cardRepo = new SQLiteCardRepository();
@@ -218,7 +220,13 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
                 </View>
               </View>
             );
-          })}
+          {/* Seção de Ajustes de Voz / Acessibilidade */}
+          <View style={{ marginTop: 8, marginBottom: 24 }}>
+            <Text style={styles.sectionTitle}>Acessibilidade e Síntese de Voz</Text>
+            <TouchableOpacity style={styles.voiceConfigBtn} onPress={() => setShowVoiceSettings(true)}>
+              <Text style={styles.voiceConfigBtnText}>🗣️ Configurar Velocidade, Tom e Idioma da Voz (TTS)</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 
@@ -235,6 +243,12 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
         categories={categories}
         onClose={() => setShowAddCard(false)}
         onCardAdded={(newCard) => setCards((prev) => [...prev, newCard])}
+      />
+
+      {/* Modal Configurações de Voz */}
+      <VoiceSettingsModal
+        visible={showVoiceSettings}
+        onClose={() => setShowVoiceSettings(false)}
       />
 
       {/* Banner de Anúncios no Rodapé (Exibido apenas para usuários gratuitos) */}
@@ -419,5 +433,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 11,
     fontWeight: 'bold',
+  },
+  voiceConfigBtn: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#3B82F6',
+  },
+  voiceConfigBtnText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#1D4ED8',
   },
 });
