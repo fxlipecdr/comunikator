@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { AACCard } from '../../../domain/entities/Card';
 import { ExpoSpeechAdapter } from '../../../infrastructure/speech/ExpoSpeechAdapter';
+import { SoundEffects } from '../../../shared/utils/soundEffects';
 
 interface SentenceBarProps {
   cards: AACCard[];
@@ -18,6 +19,7 @@ export const SentenceBar: React.FC<SentenceBarProps> = ({
 }) => {
   const handleSpeakSentence = () => {
     if (cards.length === 0) return;
+    SoundEffects.playSuccessSound();
     const sentence = cards.map((c) => c.label).join(' ');
     ExpoSpeechAdapter.speak(sentence);
   };

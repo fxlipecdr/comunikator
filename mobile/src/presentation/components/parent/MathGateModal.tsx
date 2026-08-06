@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 
 interface MathGateModalProps {
   visible: boolean;
@@ -8,10 +8,14 @@ interface MathGateModalProps {
 }
 
 export const MathGateModal: React.FC<MathGateModalProps> = ({ visible, onSuccess, onCancel }) => {
+  const [mode, setMode] = useState<'math' | 'pin'>('math');
   const [num1, setNum1] = useState(0);
   const [num2, setNum2] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
+  const [pinAnswer, setPinAnswer] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  const CUSTOM_PIN = '1234';
 
   useEffect(() => {
     if (visible) {
@@ -20,29 +24,40 @@ export const MathGateModal: React.FC<MathGateModalProps> = ({ visible, onSuccess
   }, [visible]);
 
   const generateChallenge = () => {
-    const n1 = Math.floor(Math.random() * 8) + 3; // 3 a 10
-    const n2 = Math.floor(Math.random() * 8) + 2; // 2 a 9
+    const n1 = Math.floor(Math.random() * 8) + 3;
+    const n2 = Math.floor(Math.random() * 8) + 2;
     setNum1(n1);
     setNum2(n2);
     setUserAnswer('');
+    setPinAnswer('');
     setErrorMsg('');
   };
 
   const handleVerify = () => {
-    const expected = num1 + num2;
-    const inputNum = parseInt(userAnswer.trim(), 10);
+    if (mode === 'math') {
+      const expected = num1 + num2;
+      const inputNum = parseInt(userAnswer.trim(), 10);
 
-    if (isNaN(inputNum)) {
-      setErrorMsg('Por favor, insira um número válido.');
-      return;
-    }
+      if (isNaN(inputNum)) {
+        setErrorMsg('Por favor, insira um número válido.');
+        return;
+      }
 
-    if (inputNum === expected) {
-      setErrorMsg('');
-      onSuccess();
+      if (inputNum === expected) {
+        setErrorMsg('');
+        onSuccess();
+      } else {
+        setErrorMsg('Resposta incorreta. Tente novamente.');
+        generateChallenge();
+      }
     } else {
-      setErrorMsg('Resposta incorreta. Tente novamente.');
-      generateChallenge();
+      if (pinAnswer.trim() === CUSTOM_PIN) {
+        setErrorMsg('');
+        onSuccess();
+      } else {
+        setErrorMsg('PIN de segurança incorreto.');
+        setPinAnswer('');
+      }
     }
   };
 
@@ -51,24 +66,68 @@ export const MathGateModal: React.FC<MathGateModalProps> = ({ visible, onSuccess
       <View style={styles.overlay}>
         <View style={styles.modalContent}>
           <Text style={styles.title}>🔒 Acesso dos Responsáveis</Text>
-          <Text style={styles.subtitle}>
-            Para garantir que a criança continue navegando com segurança, resolva o desafio abaixo:
-          </Text>
+          
+          {/* Seletor de Modo */}
+          <View style={styles.modeTabs}>
+            <TouchableOpacity
+              style={[styles.modeTab, mode === 'math' && styles.selectedModeTab]}
+              onPress={() => {
+                setMode('math');
+                setErrorMsg('');
+              }}
+            >
+              <Text style={[styles.modeTabText, mode === 'math' && styles.selectedModeTabText]}>
+                ➕ Desafio
+              </Text>
+            </TouchableOpacity>
 
-          <View style={styles.challengeBox}>
-            <Text style={styles.challengeText}>
-              Quanto é {num1} + {num2} ?
-            </Text>
+            <TouchableOpacity
+              style={[styles.modeTab, mode === 'pin' && styles.selectedModeTab]}
+              onPress={() => {
+                setMode('pin');
+                setErrorMsg('');
+              }}
+            >
+              <Text style={[styles.modeTabText, mode === 'pin' && styles.selectedModeTabText]}>
+                🔑 PIN Fixo (1234)
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          <TextInput
-            style={styles.input}
-            keyboardType="number-pad"
-            placeholder="Digite o resultado"
-            value={userAnswer}
-            onChangeText={setUserAnswer}
-            autoFocus
-          />
+          {mode === 'math' ? (
+            <>
+              <Text style={styles.subtitle}>
+                Resolva o cálculo abaixo para acessar a área administrativa:
+              </Text>
+              <View style={styles.challengeBox}>
+                <Text style={styles.challengeText}>
+                  Quanto é {num1} + {num2} ?
+                </Text>
+              </View>
+              <TextInput
+                style={styles.input}
+                keyboardType="number-pad"
+                placeholder="Digite o resultado"
+                value={userAnswer}
+                onChangeText={setUserAnswer}
+                autoFocus
+              />
+            </>
+          ) : (
+            <>
+              <Text style={styles.subtitle}>Digite o seu PIN de Segurança de 4 dígitos:</Text>
+              <TextInput
+                style={styles.input}
+                keyboardType="number-pad"
+                secureTextEntry
+                maxLength={4}
+                placeholder="****"
+                value={pinAnswer}
+                onChangeText={setPinAnswer}
+                autoFocus
+              />
+            </>
+          )}
 
           {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
 
@@ -108,17 +167,44 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#0F172A',
-    marginBottom: 8,
+    marginBottom: 12,
+  },
+  modeTabs: {
+    flexDirection: 'row',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 16,
+    width: '100%',
+  },
+  modeTab: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  selectedModeTab: {
+    backgroundColor: '#FFFFFF',
+    elevation: 2,
+  },
+  modeTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  selectedModeTabText: {
+    color: '#2563EB',
+    fontWeight: 'bold',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#64748B',
     textAlign: 'center',
     marginBottom: 16,
   },
   challengeBox: {
     backgroundColor: '#F1F5F9',
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
     marginBottom: 16,

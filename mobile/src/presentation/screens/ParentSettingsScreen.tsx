@@ -224,6 +224,8 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
                 </View>
               </View>
             );
+          })}
+
           {/* Seção de Ajustes de Acessibilidade e Relatórios */}
           <View style={{ marginTop: 8, marginBottom: 24 }}>
             <Text style={styles.sectionTitle}>Acessibilidade e Relatórios</Text>

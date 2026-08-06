@@ -2,6 +2,7 @@ import React from 'react';
 import { TouchableOpacity, Text, Image, StyleSheet } from 'react-native';
 import { AACCard } from '../../../domain/entities/Card';
 import { ExpoSpeechAdapter } from '../../../infrastructure/speech/ExpoSpeechAdapter';
+import { SoundEffects } from '../../../shared/utils/soundEffects';
 
 interface CardTileProps {
   card: AACCard;
@@ -11,6 +12,9 @@ interface CardTileProps {
 
 export const CardTile: React.FC<CardTileProps> = ({ card, colorCode = '#4A90E2', onPress }) => {
   const handlePress = () => {
+    // Som tátil/sensorial imediato
+    SoundEffects.playClickSound();
+
     // Fala individual do cartão ao tocar
     ExpoSpeechAdapter.speak(card.label);
     onPress(card);
