@@ -10,8 +10,10 @@ import { SQLiteCardRepository } from '../../infrastructure/database/SQLiteCardRe
 import { AddCategoryModal } from '../components/parent/AddCategoryModal';
 import { AddCardModal } from '../components/parent/AddCardModal';
 import { VoiceSettingsModal } from '../components/parent/VoiceSettingsModal';
+import { AnalyticsDashboardModal } from '../components/parent/AnalyticsDashboardModal';
 import { SyncApiClient } from '../../infrastructure/api/syncApiClient';
 import { SyncCloudData } from '../../domain/usecases/SyncCloudData';
+import { ThemeMode } from '../../domain/entities/ThemeConfig';
 
 interface ParentSettingsScreenProps {
   onBackToChildMode: () => void;
@@ -28,11 +30,13 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
   const [cards, setCards] = useState<AACCard[]>([]);
   const [purchasing, setPurchasing] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [themeMode, setThemeMode] = useState<ThemeMode>('vibrant');
 
-  // Modais de Criação e Ajustes
+  // Modais de Criação, Ajustes e Relatório
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddCard, setShowAddCard] = useState(false);
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
 
   const categoryRepo = new SQLiteCategoryRepository();
   const cardRepo = new SQLiteCardRepository();
@@ -220,11 +224,25 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
                 </View>
               </View>
             );
-          {/* Seção de Ajustes de Voz / Acessibilidade */}
+          {/* Seção de Ajustes de Acessibilidade e Relatórios */}
           <View style={{ marginTop: 8, marginBottom: 24 }}>
-            <Text style={styles.sectionTitle}>Acessibilidade e Síntese de Voz</Text>
+            <Text style={styles.sectionTitle}>Acessibilidade e Relatórios</Text>
+            
             <TouchableOpacity style={styles.voiceConfigBtn} onPress={() => setShowVoiceSettings(true)}>
               <Text style={styles.voiceConfigBtnText}>🗣️ Configurar Velocidade, Tom e Idioma da Voz (TTS)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.voiceConfigBtn, styles.analyticsBtn]} onPress={() => setShowAnalyticsModal(true)}>
+              <Text style={styles.analyticsBtnText}>📊 Ver Relatório de Comunicação & Progresso</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.voiceConfigBtn, styles.themeBtn]}
+              onPress={() => setThemeMode((prev) => (prev === 'vibrant' ? 'sensory_soft' : 'vibrant'))}
+            >
+              <Text style={styles.themeBtnText}>
+                🎨 Tema Visual: {themeMode === 'vibrant' ? '🌈 Cores Padrão (Vibrante)' : '🍃 Cores Suaves (Anti-Fotofobia)'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -249,6 +267,12 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
       <VoiceSettingsModal
         visible={showVoiceSettings}
         onClose={() => setShowVoiceSettings(false)}
+      />
+
+      {/* Modal Relatório Analytics */}
+      <AnalyticsDashboardModal
+        visible={showAnalyticsModal}
+        onClose={() => setShowAnalyticsModal(false)}
       />
 
       {/* Banner de Anúncios no Rodapé (Exibido apenas para usuários gratuitos) */}
@@ -446,5 +470,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     color: '#1D4ED8',
+  },
+  analyticsBtn: {
+    marginTop: 10,
+    borderColor: '#10B981',
+  },
+  analyticsBtnText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#047857',
+  },
+  themeBtn: {
+    marginTop: 10,
+    borderColor: '#7C3AED',
+  },
+  themeBtnText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#6D28D9',
   },
 });

@@ -7,6 +7,7 @@ import { QuickPhrase } from '../../domain/entities/QuickPhrase';
 import { SQLiteCategoryRepository } from '../../infrastructure/database/SQLiteCategoryRepository';
 import { SQLiteCardRepository } from '../../infrastructure/database/SQLiteCardRepository';
 import { SQLiteQuickPhraseRepository } from '../../infrastructure/database/SQLiteQuickPhraseRepository';
+import { SQLiteAnalyticsRepository } from '../../infrastructure/database/SQLiteAnalyticsRepository';
 import { runMigrations } from '../../infrastructure/database/migrations';
 import { SentenceBar } from '../components/child/SentenceBar';
 import { CategoryGrid } from '../components/child/CategoryGrid';
@@ -30,6 +31,7 @@ export const ChildCommunicationScreen: React.FC<ChildCommunicationScreenProps> =
   const categoryRepo = new SQLiteCategoryRepository();
   const cardRepo = new SQLiteCardRepository();
   const quickPhraseRepo = new SQLiteQuickPhraseRepository();
+  const analyticsRepo = new SQLiteAnalyticsRepository();
 
   useEffect(() => {
     loadData();
@@ -67,10 +69,13 @@ export const ChildCommunicationScreen: React.FC<ChildCommunicationScreenProps> =
 
   const handleSelectCard = (card: AACCard) => {
     setSelectedCards((prev) => [...prev, card]);
+    const cat = categories.find((c) => c.id === card.categoryId);
+    analyticsRepo.logUsage(card.id, card.label, cat ? cat.name : 'Geral');
   };
 
   const handleSelectQuickPhrase = (phrase: QuickPhrase) => {
     setSelectedCards(phrase.cards);
+    analyticsRepo.logUsage(phrase.id, phrase.label, 'Favoritos');
   };
 
   const handleSaveFavorite = async () => {
