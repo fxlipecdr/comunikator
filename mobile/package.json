@@ -12,6 +12,7 @@
     "expo-status-bar": "~1.12.1",
     "expo-speech": "~12.0.2",
     "expo-sqlite": "~14.0.3",
+    "expo-image-picker": "~15.0.7",
     "react": "18.2.0",
     "react-native": "0.74.1",
     "react-native-google-mobile-ads": "^14.2.0",
