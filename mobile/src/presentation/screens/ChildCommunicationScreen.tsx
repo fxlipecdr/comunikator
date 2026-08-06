@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, SafeAreaView, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, SafeAreaView, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Category } from '../../domain/entities/Category';
 import { AACCard } from '../../domain/entities/Card';
+import { QuickPhrase } from '../../domain/entities/QuickPhrase';
 import { SQLiteCategoryRepository } from '../../infrastructure/database/SQLiteCategoryRepository';
 import { SQLiteCardRepository } from '../../infrastructure/database/SQLiteCardRepository';
+import { SQLiteQuickPhraseRepository } from '../../infrastructure/database/SQLiteQuickPhraseRepository';
 import { runMigrations } from '../../infrastructure/database/migrations';
 import { SentenceBar } from '../components/child/SentenceBar';
 import { CategoryGrid } from '../components/child/CategoryGrid';
@@ -18,14 +20,16 @@ export const ChildCommunicationScreen: React.FC<ChildCommunicationScreenProps> =
   onOpenParentSettings,
 }) => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>('fav');
   const [cards, setCards] = useState<AACCard[]>([]);
+  const [quickPhrases, setQuickPhrases] = useState<QuickPhrase[]>([]);
   const [selectedCards, setSelectedCards] = useState<AACCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [showMathGate, setShowMathGate] = useState(false);
 
   const categoryRepo = new SQLiteCategoryRepository();
   const cardRepo = new SQLiteCardRepository();
+  const quickPhraseRepo = new SQLiteQuickPhraseRepository();
 
   useEffect(() => {
     loadData();
@@ -36,11 +40,13 @@ export const ChildCommunicationScreen: React.FC<ChildCommunicationScreenProps> =
       setLoading(true);
       await runMigrations();
       const loadedCategories = await categoryRepo.getAll();
+      const loadedQuickPhrases = await quickPhraseRepo.getAll();
+
       setCategories(loadedCategories);
+      setQuickPhrases(loadedQuickPhrases);
 
       if (loadedCategories.length > 0) {
         const firstCatId = loadedCategories[0].id;
-        setSelectedCategoryId(firstCatId);
         const loadedCards = await cardRepo.getByCategory(firstCatId);
         setCards(loadedCards);
       }
@@ -53,12 +59,34 @@ export const ChildCommunicationScreen: React.FC<ChildCommunicationScreenProps> =
 
   const handleSelectCategory = async (categoryId: string) => {
     setSelectedCategoryId(categoryId);
-    const loadedCards = await cardRepo.getByCategory(categoryId);
-    setCards(loadedCards);
+    if (categoryId !== 'fav') {
+      const loadedCards = await cardRepo.getByCategory(categoryId);
+      setCards(loadedCards);
+    }
   };
 
   const handleSelectCard = (card: AACCard) => {
     setSelectedCards((prev) => [...prev, card]);
+  };
+
+  const handleSelectQuickPhrase = (phrase: QuickPhrase) => {
+    setSelectedCards(phrase.cards);
+  };
+
+  const handleSaveFavorite = async () => {
+    if (selectedCards.length === 0) return;
+
+    const phraseLabel = selectedCards.map((c) => c.label).join(' ');
+    const newPhrase: Omit<QuickPhrase, 'createdAt'> = {
+      id: `qp-${Date.now()}`,
+      label: phraseLabel,
+      cards: selectedCards,
+      colorCode: '#F59E0B',
+    };
+
+    const saved = await quickPhraseRepo.create(newPhrase);
+    setQuickPhrases((prev) => [saved, ...prev]);
+    Alert.alert('⭐ Frase Favoritada!', `O atalho "${phraseLabel}" foi adicionado às suas Frases Favoritas.`);
   };
 
   const handleRemoveCard = (indexToRemove: number) => {
@@ -87,7 +115,7 @@ export const ChildCommunicationScreen: React.FC<ChildCommunicationScreenProps> =
     <SafeAreaView style={styles.container}>
       <StatusBar hidden />
       
-      {/* Botão sutil e discreto para acesso dos pais */}
+      {/* Topo com título e portão parental */}
       <View style={styles.headerBar}>
         <Text style={styles.appTitle}>Comunikator</Text>
         <TouchableOpacity
@@ -99,23 +127,26 @@ export const ChildCommunicationScreen: React.FC<ChildCommunicationScreenProps> =
         </TouchableOpacity>
       </View>
 
-      {/* Barra de Frases com Voz */}
+      {/* Barra de Frases */}
       <SentenceBar
         cards={selectedCards}
         onRemoveCard={handleRemoveCard}
         onClearAll={handleClearAll}
+        onSaveFavorite={handleSaveFavorite}
       />
 
-      {/* Prancha / Grid de Categorias e Cartões */}
+      {/* Grid de Categorias / Favoritos */}
       <CategoryGrid
         categories={categories}
         selectedCategoryId={selectedCategoryId}
         cards={cards}
+        quickPhrases={quickPhrases}
         onSelectCategory={handleSelectCategory}
         onSelectCard={handleSelectCard}
+        onSelectQuickPhrase={handleSelectQuickPhrase}
       />
 
-      {/* Modal de Desafio Matemático (Controle Parental) */}
+      {/* Modal de Desafio Matemático */}
       <MathGateModal
         visible={showMathGate}
         onSuccess={handleParentGateSuccess}

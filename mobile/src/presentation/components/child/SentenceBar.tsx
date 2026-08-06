@@ -7,9 +7,15 @@ interface SentenceBarProps {
   cards: AACCard[];
   onRemoveCard: (index: number) => void;
   onClearAll: () => void;
+  onSaveFavorite?: () => void;
 }
 
-export const SentenceBar: React.FC<SentenceBarProps> = ({ cards, onRemoveCard, onClearAll }) => {
+export const SentenceBar: React.FC<SentenceBarProps> = ({
+  cards,
+  onRemoveCard,
+  onClearAll,
+  onSaveFavorite,
+}) => {
   const handleSpeakSentence = () => {
     if (cards.length === 0) return;
     const sentence = cards.map((c) => c.label).join(' ');
@@ -41,13 +47,23 @@ export const SentenceBar: React.FC<SentenceBarProps> = ({ cards, onRemoveCard, o
       </ScrollView>
 
       <View style={styles.actionsContainer}>
+        {cards.length > 0 && onSaveFavorite && (
+          <TouchableOpacity
+            style={[styles.actionButton, styles.favoriteButton]}
+            onPress={onSaveFavorite}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.favoriteButtonText}>⭐</Text>
+          </TouchableOpacity>
+        )}
+
         {cards.length > 0 && (
           <TouchableOpacity
             style={[styles.actionButton, styles.clearButton]}
             onPress={onClearAll}
             activeOpacity={0.8}
           >
-            <Text style={styles.actionButtonText}>🗑️ Limpar</Text>
+            <Text style={styles.actionButtonText}>🗑️</Text>
           </TouchableOpacity>
         )}
 
@@ -119,14 +135,22 @@ const styles = StyleSheet.create({
   actionsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   actionButton: {
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  favoriteButton: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+  },
+  favoriteButtonText: {
+    fontSize: 18,
   },
   clearButton: {
     backgroundColor: '#FEE2E2',
