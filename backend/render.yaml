@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: comunikator-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: comunikator-db
+          property: connectionString
+
+databases:
+  - name: comunikator-db
+    databaseName: comunikator
+    user: comunikator_user
