@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Platform } from 'react-native';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 import { AdMobService } from '../../../infrastructure/monetization/AdMobService';
 
@@ -9,7 +9,7 @@ interface AdMobBannerProps {
 
 export const AdMobBanner: React.FC<AdMobBannerProps> = ({ isPremium }) => {
   useEffect(() => {
-    if (!isPremium) {
+    if (!isPremium && Platform.OS !== 'web') {
       AdMobService.initialize();
     }
   }, [isPremium]);
@@ -19,7 +19,15 @@ export const AdMobBanner: React.FC<AdMobBannerProps> = ({ isPremium }) => {
     return null;
   }
 
-  // ID de Teste oficial do Google AdMob para Banner
+  // No ambiente Web, exibimos um placeholder de anúncio
+  if (Platform.OS === 'web') {
+    return (
+      <View style={styles.bannerContainer}>
+        <Text style={styles.adTag}>Anúncio AdMob (Modo Web)</Text>
+      </View>
+    );
+  }
+
   const adUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-3940256099942544/6300978111';
 
   return (
@@ -46,12 +54,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     borderTopWidth: 1,
     borderColor: '#E2E8F0',
-    paddingVertical: 4,
+    paddingVertical: 8,
   },
   adTag: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#94A3B8',
     textTransform: 'uppercase',
-    marginBottom: 2,
   },
 });

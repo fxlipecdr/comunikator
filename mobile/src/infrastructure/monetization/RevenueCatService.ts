@@ -10,7 +10,7 @@ export class RevenueCatService {
   private static initialized = false;
 
   static async setup(userId?: string): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized || Platform.OS === 'web') return;
 
     try {
       const apiKey = Platform.OS === 'ios' ? API_KEYS.apple : API_KEYS.google;
@@ -22,10 +22,9 @@ export class RevenueCatService {
     }
   }
 
-  /**
-   * Obtém os pacotes de assinatura ativos na loja (Mensal, Anual, etc)
-   */
   static async getOfferings(): Promise<PurchasesPackage[]> {
+    if (Platform.OS === 'web') return [];
+
     try {
       const offerings = await Purchases.getOfferings();
       if (offerings.current !== null && offerings.current.availablePackages.length !== 0) {
@@ -38,10 +37,9 @@ export class RevenueCatService {
     }
   }
 
-  /**
-   * Aciona a compra de um pacote e retorna se o status de premium foi ativado
-   */
   static async purchasePackage(pack: PurchasesPackage): Promise<boolean> {
+    if (Platform.OS === 'web') return false;
+
     try {
       const { customerInfo } = await Purchases.purchasePackage(pack);
       return customerInfo.entitlements.active['premium_access'] !== undefined;
@@ -53,10 +51,9 @@ export class RevenueCatService {
     }
   }
 
-  /**
-   * Restaura compras anteriores feitas na App Store / Play Store
-   */
   static async restorePurchases(): Promise<boolean> {
+    if (Platform.OS === 'web') return false;
+
     try {
       const customerInfo: CustomerInfo = await Purchases.restorePurchases();
       return customerInfo.entitlements.active['premium_access'] !== undefined;

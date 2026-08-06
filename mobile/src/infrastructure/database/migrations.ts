@@ -1,13 +1,18 @@
+import { Platform } from 'react-native';
 import { getDatabase } from './sqliteClient';
 
 export const runMigrations = async (): Promise<void> => {
+  if (Platform.OS === 'web') {
+    console.log('[Database] Web Platform detectada. Usando armazenamento web local.');
+    return;
+  }
+
   try {
     const db = await getDatabase();
+    if (!db) return;
 
-    // Habilita foreign keys no SQLite
     await db.execAsync('PRAGMA foreign_keys = ON;');
 
-    // Criar tabela de Categorias
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS categories (
         id TEXT PRIMARY KEY NOT NULL,
@@ -19,7 +24,6 @@ export const runMigrations = async (): Promise<void> => {
       );
     `);
 
-    // Criar tabela de Cartões (Pranchas de CAA)
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS cards (
         id TEXT PRIMARY KEY NOT NULL,
@@ -36,7 +40,6 @@ export const runMigrations = async (): Promise<void> => {
       CREATE INDEX IF NOT EXISTS idx_cards_position ON cards(position);
     `);
 
-    // Inserir dados padrão de inicialização (Seed Data) caso esteja vazio
     const categoriesCount = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM categories');
     
     if (categoriesCount && categoriesCount.count === 0) {
@@ -64,6 +67,5 @@ export const runMigrations = async (): Promise<void> => {
     console.log('[SQLite Database] Migrações e Seeds aplicados com sucesso.');
   } catch (error) {
     console.error('[SQLite Database] Erro ao executar migrações:', error);
-    throw error;
   }
 };
