@@ -9,6 +9,8 @@ import { SQLiteCategoryRepository } from '../../infrastructure/database/SQLiteCa
 import { SQLiteCardRepository } from '../../infrastructure/database/SQLiteCardRepository';
 import { AddCategoryModal } from '../components/parent/AddCategoryModal';
 import { AddCardModal } from '../components/parent/AddCardModal';
+import { SyncApiClient } from '../../infrastructure/api/syncApiClient';
+import { SyncCloudData } from '../../domain/usecases/SyncCloudData';
 
 interface ParentSettingsScreenProps {
   onBackToChildMode: () => void;
@@ -118,10 +120,19 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
   const handleCloudSync = async () => {
     setSyncing(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      Alert.alert('Sincronização Concluída', `${cards.length} cartões e ${categories.length} categorias salvos na nuvem PostgreSQL.`);
+      const syncUseCase = new SyncCloudData(categoryRepo, cardRepo, new SyncApiClient());
+      const result = await syncUseCase.execute(user.id, user.isPremium);
+
+      if (result.success) {
+        Alert.alert(
+          'Sincronização Concluída',
+          `${result.message}\nTotal: ${result.syncedCategoriesCount} categorias e ${result.syncedCardsCount} cartões no PostgreSQL.`
+        );
+      } else {
+        Alert.alert('Aviso de Backup', result.message);
+      }
     } catch (error) {
-      Alert.alert('Erro no Backup', 'Falha ao conectar com o servidor. O app continua funcionando offline.');
+      Alert.alert('Erro no Backup', 'Falha ao comunicar com o servidor. Seus dados continuam 100% seguros offline.');
     } finally {
       setSyncing(false);
     }
