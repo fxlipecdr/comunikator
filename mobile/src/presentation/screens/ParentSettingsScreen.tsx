@@ -11,6 +11,8 @@ import { AddCategoryModal } from '../components/parent/AddCategoryModal';
 import { AddCardModal } from '../components/parent/AddCardModal';
 import { VoiceSettingsModal } from '../components/parent/VoiceSettingsModal';
 import { AnalyticsDashboardModal } from '../components/parent/AnalyticsDashboardModal';
+import { AuthModal } from '../components/parent/AuthModal';
+import { PrivacyPolicyModal } from '../components/parent/PrivacyPolicyModal';
 import { SyncApiClient } from '../../infrastructure/api/syncApiClient';
 import { SyncCloudData } from '../../domain/usecases/SyncCloudData';
 import { ThemeMode } from '../../domain/entities/ThemeConfig';
@@ -20,11 +22,8 @@ interface ParentSettingsScreenProps {
 }
 
 export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBackToChildMode }) => {
-  const [user, setUser] = useState<User>({
-    id: 'usr-local-1',
-    email: 'pais@exemplo.com',
-    isPremium: false,
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [cards, setCards] = useState<AACCard[]>([]);
@@ -32,11 +31,13 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
   const [syncing, setSyncing] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>('vibrant');
 
-  // Modais de Criação, Ajustes e Relatório
+  // Modais
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddCard, setShowAddCard] = useState(false);
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   const categoryRepo = new SQLiteCategoryRepository();
   const cardRepo = new SQLiteCardRepository();
@@ -154,21 +155,37 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Card de Conta do Responsável */}
+        <View style={styles.accountCard}>
+          {user ? (
+            <View style={styles.accountHeader}>
+              <Text style={styles.accountEmail}>👤 {user.email}</Text>
+              <TouchableOpacity onPress={() => setUser(null)}>
+                <Text style={styles.logoutText}>Sair</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.loginBtn} onPress={() => setShowAuthModal(true)}>
+              <Text style={styles.loginBtnText}>🔑 Entrar / Criar Conta Gratuita de Responsável</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Card de Status do Plano */}
-        <View style={[styles.card, user.isPremium ? styles.premiumCard : styles.freeCard]}>
+        <View style={[styles.card, user?.isPremium ? styles.premiumCard : styles.freeCard]}>
           <View style={styles.planHeader}>
             <Text style={styles.planTitle}>
-              Plano Atual: {user.isPremium ? '🌟 Premium (Nuvem Ativada)' : '🌱 Gratuito'}
+              Plano Atual: {user?.isPremium ? '🌟 Premium (Nuvem Ativada)' : '🌱 Gratuito'}
             </Text>
           </View>
           <Text style={styles.planDescription}>
-            {user.isPremium
+            {user?.isPremium
               ? 'Sua conta está sincronizada. Seus cartões e configurações estão protegidos na nuvem e os anúncios foram removidos.'
               : 'Assine o plano Premium para realizar backup automático dos cartões na nuvem e remover todos os anúncios.'}
           </Text>
 
           <TouchableOpacity
-            style={[styles.upgradeButton, user.isPremium ? styles.syncButtonStyle : styles.paywallButtonStyle]}
+            style={[styles.upgradeButton, user?.isPremium ? styles.syncButtonStyle : styles.paywallButtonStyle]}
             onPress={handleUpgradeOrSync}
             disabled={purchasing || syncing}
           >
@@ -176,7 +193,7 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text style={styles.upgradeButtonText}>
-                {user.isPremium ? '☁️ Sincronizar Agora com a Nuvem' : '⚡ Fazer Upgrade / Backup na Nuvem'}
+                {user?.isPremium ? '☁️ Sincronizar Agora com a Nuvem' : '⚡ Fazer Upgrade / Backup na Nuvem'}
               </Text>
             )}
           </TouchableOpacity>
@@ -246,6 +263,10 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
                 🎨 Tema Visual: {themeMode === 'vibrant' ? '🌈 Cores Padrão (Vibrante)' : '🍃 Cores Suaves (Anti-Fotofobia)'}
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.voiceConfigBtn, styles.privacyBtn]} onPress={() => setShowPrivacyModal(true)}>
+              <Text style={styles.privacyBtnText}>📜 Política de Privacidade & Termos LGPD / COPPA</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -275,6 +296,22 @@ export const ParentSettingsScreen: React.FC<ParentSettingsScreenProps> = ({ onBa
       <AnalyticsDashboardModal
         visible={showAnalyticsModal}
         onClose={() => setShowAnalyticsModal(false)}
+      />
+
+      {/* Modal Autenticação de Usuário */}
+      <AuthModal
+        visible={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onAuthSuccess={(u, token) => {
+          setUser(u);
+          setAuthToken(token);
+        }}
+      />
+
+      {/* Modal Política de Privacidade */}
+      <PrivacyPolicyModal
+        visible={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
       />
 
       {/* Banner de Anúncios no Rodapé (Exibido apenas para usuários gratuitos) */}
@@ -490,5 +527,46 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     color: '#6D28D9',
+  },
+  accountCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  accountHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  accountEmail: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  logoutText: {
+    color: '#EF4444',
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+  loginBtn: {
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  loginBtnText: {
+    color: '#2563EB',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  privacyBtn: {
+    marginTop: 10,
+    borderColor: '#64748B',
+  },
+  privacyBtnText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#334155',
   },
 });
