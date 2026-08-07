@@ -1,0 +1,17 @@
+{
+  "name": "comunikator-monorepo",
+  "version": "1.0.0",
+  "description": "Aplicativo de Comunicação Aumentativa e Alternativa (CAA) para Crianças Autistas",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently --names \"MOBILE,BACKEND\" -c \"cyan,magenta\" \"npm run start:mobile\" \"npm run start:backend\"",
+    "dev": "concurrently --names \"WEB,BACKEND\" -c \"blue,green\" \"npm run dev:mobile\" \"npm run start:backend\"",
+    "dev:mobile": "cd mobile && npx expo start --web --port 8081",
+    "start:mobile": "cd mobile && npx expo start --tunnel",
+    "start:backend": "cd backend && python -m uvicorn app.main:app --reload --port 8000"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "private": true
+}
